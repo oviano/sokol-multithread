@@ -12,7 +12,7 @@ Render thread
 Update thread
 
 - call renderer->add_command_xxx() commands in a similar manner to how you would call sg_xxx() commands
-- call renderer->commit_commands() when you're for the frame
+- call renderer->commit_commands() when you're done for the frame
 - call renderer->flush_commands() on termination, before exiting the thread
 
 There is also a modified version of sokol_imgui.h as an example.
@@ -25,4 +25,4 @@ To help with this, you can supply an optional completion callback to certain add
 
 This can be used to free up the memory or clean-up any objects that own the memory and avoids the need for the wrapper to make any copies of data.
 
-To keep things simple, these calls are always made in the same thread as the original renderer->add_command_xxx() was made.
+To keep things simple, these calls are always made in the same thread as the original renderer->add_command_xxx() was made. More precisely the calls are made from the following renderer->commit_commands() call.
