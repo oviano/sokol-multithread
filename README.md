@@ -21,4 +21,6 @@ Resources
 
 When creating or updating resources, buffers etc. it is up to the caller to ensure that any pointers passed into an add_command_xxx() command remain valid until the actual underlying sg_xxx() command is issued from the render thread.
 
-To help with this, you can supply an optional completion callback to certain add_command_xxx() calls which will be called later after the command has been executed. To keep things simple, this call is always made in the same thread as the original renderer->add_command_xxx() was made.
+To help with this, you can supply an optional completion callback to certain add_command_xxx() calls which will be called after the command has been executed and access to the memory is no longer required.
+
+To keep things simple, this call is always made in the same thread as the original renderer->add_command_xxx() was made.
