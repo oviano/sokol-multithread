@@ -239,7 +239,8 @@ public:
 	~RENDERER();
 
 	// render thread functions
-	bool execute_commands(bool terminating);
+	void execute_commands();
+	void wait_for_flush();
 
 	void set_default_pass_size(int width, int height) { m_default_pass_width = width; m_default_pass_height = height; }
 

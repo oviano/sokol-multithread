@@ -47,7 +47,7 @@ RENDERER::~RENDERER()
 
 // ----------------------------------------------------------------------------------------------------
 
-bool RENDERER::execute_commands(bool terminating)
+void RENDERER::execute_commands()
 {
 	// not flushing?
 	if (!m_flushing)
@@ -61,13 +61,7 @@ bool RENDERER::execute_commands(bool terminating)
 	{
 		// set command
 		const RENDER_COMMAND& command = *i;
-
-		// ignore command?
-		if (terminating && !(command.type >= RENDER_COMMAND::TYPE::DESTROY_BUFFER && command.type <= RENDER_COMMAND::TYPE::DESTROY_PASS))
-		{
-			continue;
-		}
-
+		
 		// execute command
 		switch (command.type)
 		{
@@ -153,11 +147,63 @@ bool RENDERER::execute_commands(bool terminating)
 			break;
 		}
 	}
-
+	
 	// release render semaphore
 	m_render_semaphore.release();
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+void RENDERER::wait_for_flush()
+{
+	// initialise finished flushing
+	bool finished_flushing = false;
 	
-	return !m_flushing;
+	// wait for flush
+	while (!finished_flushing)
+	{
+		// not flushing?
+		if (!m_flushing)
+		{
+			// acquire update semaphore
+			m_update_semaphore.acquire();
+		}
+		
+		// loop through commands
+		for (RENDER_COMMAND_ARRAY::iterator i = m_commands[m_commit_commands_index].begin(); i != m_commands[m_commit_commands_index].end(); i ++)
+		{
+			// set command
+			const RENDER_COMMAND& command = *i;
+			
+			// execute command
+			switch (command.type)
+			{
+			case RENDER_COMMAND::TYPE::DESTROY_BUFFER:
+				sg_destroy_buffer(command.destroy_buffer.buffer);
+				break;
+			case RENDER_COMMAND::TYPE::DESTROY_IMAGE:
+				sg_destroy_image(command.destroy_image.image);
+				break;
+			case RENDER_COMMAND::TYPE::DESTROY_SHADER:
+				sg_destroy_shader(command.destroy_shader.shader);
+				break;
+			case RENDER_COMMAND::TYPE::DESTROY_PIPELINE:
+				sg_destroy_pipeline(command.destroy_pipeline.pipeline);
+				break;
+			case RENDER_COMMAND::TYPE::DESTROY_PASS:
+				sg_destroy_pass(command.destroy_pass.pass);
+				break;
+			default:
+				break;
+			}
+		}
+		
+		// udpate finished flushing
+		finished_flushing = m_flushing;
+		
+		// release render semaphore
+		m_render_semaphore.release();
+	}
 }
 
 // ----------------------------------------------------------------------------------------------------
