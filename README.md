@@ -7,7 +7,8 @@ Render thread
 - create renderer instance, passing sg_desc to initialise sokol graphics
 - call renderer->set_default_pass_size() and again whenever back buffer size changes
 - call renderer->execute_commands() in render loop
-- delete renderer instance on termination
+- call renderer->wait_for_flush() on termination
+- delete renderer instance
 
 Update thread
 
