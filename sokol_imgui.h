@@ -1876,6 +1876,10 @@ SOKOL_API_IMPL void simgui_new_frame(int width, int height, double delta_time) {
     #endif
 }
 
+_SOKOL_PRIVATE void _simgui_free(void* ptr) {
+	free(ptr);
+}
+
 SOKOL_API_IMPL void simgui_render(void) {
     #if defined(__cplusplus)
         ImGui::Render();
@@ -1934,12 +1938,20 @@ SOKOL_API_IMPL void simgui_render(void) {
         #endif
 #define sg_roundup(val, round_to) (((val)+((round_to)-1))&~((round_to)-1))
         if (vtx_ptr) {
-            _simgui.desc.renderer->add_command_append_buffer(bind.vertex_buffers[0], vtx_ptr, vtx_size);
+            /* in a proper implementation we would avoid doing a malloc every frame
+                and probably use some kind of pooling system to re-use memory blocks.
+                This is really just to illustrate the completion callback API.
+            */
+			void* ptr = malloc(vtx_size);
+			memcpy(ptr, vtx_ptr, vtx_size);
+            _simgui.desc.renderer->add_command_append_buffer(bind.vertex_buffers[0], vtx_ptr, vtx_size, _simgui_free, ptr);
             vb_offset = next_vb_offset;
             next_vb_offset += sg_roundup(vtx_size, 4);
         }
         if (idx_ptr) {
-            _simgui.desc.renderer->add_command_append_buffer(bind.index_buffer, idx_ptr, idx_size);
+			void* ptr = malloc(idx_size);
+			memcpy(ptr, idx_ptr, idx_size);
+            _simgui.desc.renderer->add_command_append_buffer(bind.index_buffer, idx_ptr, idx_size, _simgui_free, ptr);
             ib_offset = next_ib_offset;
             next_ib_offset += sg_roundup(idx_size, 4);
         }
@@ -1947,11 +1959,11 @@ SOKOL_API_IMPL void simgui_render(void) {
             checked internally in sokol_gfx, draw calls that attempt to draw with
             overflowed buffers will be silently dropped)
         */
-        if (sg_query_buffer_overflow(bind.vertex_buffers[0]) ||
+        /*if (sg_query_buffer_overflow(bind.vertex_buffers[0]) ||
             sg_query_buffer_overflow(bind.index_buffer))
         {
             break;
-        }
+        }*/
         bind.vertex_buffer_offsets[0] = vb_offset;
         bind.index_buffer_offset = ib_offset;
         _simgui.desc.renderer->add_command_apply_bindings(bind);
