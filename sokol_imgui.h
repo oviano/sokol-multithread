@@ -1944,14 +1944,16 @@ SOKOL_API_IMPL void simgui_render(void) {
             */
 			void* ptr = malloc(vtx_size);
 			memcpy(ptr, vtx_ptr, vtx_size);
-            _simgui.desc.renderer->add_command_append_buffer(bind.vertex_buffers[0], vtx_ptr, vtx_size, _simgui_free, ptr);
+            _simgui.desc.renderer->add_command_append_buffer(bind.vertex_buffers[0], vtx_ptr, vtx_size);
+			_simgui.desc.renderer->schedule_cleanup(_simgui_free, ptr);
             vb_offset = next_vb_offset;
             next_vb_offset += sg_roundup(vtx_size, 4);
         }
         if (idx_ptr) {
 			void* ptr = malloc(idx_size);
 			memcpy(ptr, idx_ptr, idx_size);
-            _simgui.desc.renderer->add_command_append_buffer(bind.index_buffer, idx_ptr, idx_size, _simgui_free, ptr);
+            _simgui.desc.renderer->add_command_append_buffer(bind.index_buffer, idx_ptr, idx_size);
+			_simgui.desc.renderer->schedule_cleanup(_simgui_free, ptr);
             ib_offset = next_ib_offset;
             next_ib_offset += sg_roundup(idx_size, 4);
         }
