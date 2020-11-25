@@ -2532,7 +2532,6 @@ inline void sg_init_pass(sg_pass pass_id, const sg_pass_desc& desc) { return sg_
     #endif
 
     #ifdef SOKOL_GLES2
-    #include <GLES2/gl2.h>
     #   ifdef GL_ANGLE_instanced_arrays
     #       define SOKOL_INSTANCING_ENABLED
     #       define glDrawArraysInstanced(mode, first, count, instancecount)  glDrawArraysInstancedANGLE(mode, first, count, instancecount)
@@ -11503,7 +11502,7 @@ _SOKOL_PRIVATE void _sg_wgpu_destroy_image(_sg_image_t* img) {
 /*
     How BindGroups work in WebGPU:
 
-    - up to 4 bind groups can be bound simultanously
+    - up to 4 bind groups can be bound simultaneously
     - up to 16 bindings per bind group
     - 'binding' slots are local per bind group
     - in the shader:
