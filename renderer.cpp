@@ -180,19 +180,19 @@ void RENDERER::wait_for_flush()
 				switch (command.type)
 				{
 				case RENDER_COMMAND::TYPE::DESTROY_BUFFER:
-					sg_destroy_buffer(command.destroy_buffer.buffer);
+					sg_uninit_buffer(command.destroy_buffer.buffer);
 					break;
 				case RENDER_COMMAND::TYPE::DESTROY_IMAGE:
-					sg_destroy_image(command.destroy_image.image);
+					sg_uninit_image(command.destroy_image.image);
 					break;
 				case RENDER_COMMAND::TYPE::DESTROY_SHADER:
-					sg_destroy_shader(command.destroy_shader.shader);
+					sg_uninit_shader(command.destroy_shader.shader);
 					break;
 				case RENDER_COMMAND::TYPE::DESTROY_PIPELINE:
-					sg_destroy_pipeline(command.destroy_pipeline.pipeline);
+					sg_uninit_pipeline(command.destroy_pipeline.pipeline);
 					break;
 				case RENDER_COMMAND::TYPE::DESTROY_PASS:
-					sg_destroy_pass(command.destroy_pass.pass);
+					sg_uninit_pass(command.destroy_pass.pass);
 					break;
 				default:
 					break;
