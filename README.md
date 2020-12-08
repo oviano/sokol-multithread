@@ -20,6 +20,6 @@ There is also a modified version of sokol_imgui.h as an example.
 
 Resources
 
-When creating or updating resources (buffers, images etc) it is up to the caller to ensure that any pointers passed into an add_command_xxx() command remain valid until the underlying sg_xxx() command has been issued from the render thread.
+When creating or updating resources (buffers, images etc) it is up to the caller to ensure that any pointers passed into an add_command_xxx() call made in the update thread remain valid until the underlying sg_xxx() command has been issued from the render thread.
 
-To help with this, you can optionally schedule clean-ups via the renderer->schedule_cleanup() function which allows user-provided callbacks to be called after all the commands to create the resources have been executed. These can be used to free up the memory or clean-up any objects that own the memory and avoids the need for the wrapper to make any copies of data.
+To help with this, you can optionally schedule clean-ups via the renderer->schedule_cleanup() function which allows user-provided callbacks to be called after all the commands to create the resources have been executed. These can be used to free up the memory or clean-up any objects that own the memory and avoids the need for the wrapper to make any copies of data. For convenience, these clean up calls are also made from the update thread from inside a later commit_commands() call.
