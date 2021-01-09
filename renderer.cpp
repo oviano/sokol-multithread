@@ -1,8 +1,9 @@
 // ----------------------------------------------------------------------------------------------------
 
 #define SOKOL_IMPL
+#define SOKOL_GFX_IMPL
 #include "sokol_gfx.h"
-#undef SOKOL_IMPL
+#undef SOKOL_GFX_IMPL
 
 #include "renderer.h"
 
@@ -45,7 +46,7 @@ RENDERER::~RENDERER()
 
 // ----------------------------------------------------------------------------------------------------
 
-void RENDERER::execute_commands()
+void RENDERER::execute_commands(bool resource_only)
 {
 	// not flushing?
 	if (!m_flushing)
@@ -61,6 +62,12 @@ void RENDERER::execute_commands()
 		// loop through commands
 		for (const auto& command : m_commands[m_commit_commands_index])
 		{
+			// ignore command?
+			if (resource_only && !(command.type >= RENDER_COMMAND::TYPE::MAKE_BUFFER && command.type <= RENDER_COMMAND::TYPE::DESTROY_PASS))
+			{
+				continue;
+			}
+
 			// execute command
 			switch (command.type)
 			{
@@ -179,6 +186,21 @@ void RENDERER::wait_for_flush()
 				// execute command
 				switch (command.type)
 				{
+				case RENDER_COMMAND::TYPE::MAKE_BUFFER:
+					sg_init_buffer(command.make_buffer.buffer, command.make_buffer.desc);
+					break;
+				case RENDER_COMMAND::TYPE::MAKE_IMAGE:
+					sg_init_image(command.make_image.image, command.make_image.desc);
+					break;
+				case RENDER_COMMAND::TYPE::MAKE_SHADER:
+					sg_init_shader(command.make_shader.shader, command.make_shader.desc);
+					break;
+				case RENDER_COMMAND::TYPE::MAKE_PIPELINE:
+					sg_init_pipeline(command.make_pipeline.pipeline, command.make_pipeline.desc);
+					break;
+				case RENDER_COMMAND::TYPE::MAKE_PASS:
+					sg_init_pass(command.make_pass.pass, command.make_pass.desc);
+					break;
 				case RENDER_COMMAND::TYPE::DESTROY_BUFFER:
 					sg_uninit_buffer(command.destroy_buffer.buffer);
 					break;

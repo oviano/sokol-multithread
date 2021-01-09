@@ -232,7 +232,7 @@ public:
 	~RENDERER();
 
 	// render thread functions
-	void execute_commands();
+	void execute_commands(bool resource_only = false);
 	void wait_for_flush();
 
 	void set_default_pass_size(int width, int height) { m_default_pass_width = width; m_default_pass_height = height; }
