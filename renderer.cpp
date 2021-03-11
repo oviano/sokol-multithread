@@ -1,5 +1,7 @@
 // ----------------------------------------------------------------------------------------------------
 
+#include <string>
+
 #define SOKOL_IMPL
 #define SOKOL_GFX_IMPL
 #include "sokol_gfx.h"
@@ -14,7 +16,7 @@ constexpr int32_t INITIAL_NUMBER_OF_CLEANUPS = 128;
 
 // ----------------------------------------------------------------------------------------------------
 
-RENDERER::RENDERER(const sg_desc& desc) : m_update_semaphore(1), m_render_semaphore(1)
+RENDERER::RENDERER(const sg_desc& desc)
 {
 	// setup sokol graphics
 	sg_setup(desc);
@@ -108,13 +110,13 @@ void RENDERER::execute_commands(bool resource_only)
 				sg_uninit_pass(command.destroy_pass.pass);
 				break;
 			case RENDER_COMMAND::TYPE::UPDATE_BUFFER:
-				sg_update_buffer(command.update_buffer.buffer, command.update_buffer.data, command.update_buffer.data_size);
+				sg_update_buffer(command.update_buffer.buffer, command.update_buffer.data);
 				break;
 			case RENDER_COMMAND::TYPE::APPEND_BUFFER:
-				sg_append_buffer(command.append_buffer.buffer, command.append_buffer.data, command.append_buffer.data_size);
+				sg_append_buffer(command.append_buffer.buffer, command.append_buffer.data);
 				break;
 			case RENDER_COMMAND::TYPE::UPDATE_IMAGE:
-				sg_update_image(command.update_image.image, command.update_image.cont);
+				sg_update_image(command.update_image.image, command.update_image.data);
 				break;
 			case RENDER_COMMAND::TYPE::BEGIN_DEFAULT_PASS:
 				sg_begin_default_pass(command.begin_default_pass.pass_action, m_default_pass_width, m_default_pass_height);
@@ -135,7 +137,7 @@ void RENDERER::execute_commands(bool resource_only)
 				sg_apply_bindings(command.apply_bindings.bindings);
 				break;
 			case RENDER_COMMAND::TYPE::APPLY_UNIFORMS:
-				sg_apply_uniforms(command.apply_uniforms.stage, command.apply_uniforms.ub_index, command.apply_uniforms.data, command.apply_uniforms.data_size);
+				sg_apply_uniforms(command.apply_uniforms.stage, command.apply_uniforms.ub_index, command.apply_uniforms.data);
 				break;
 			case RENDER_COMMAND::TYPE::DRAW:
 				sg_draw(command.draw.base_element, command.draw.number_of_elements, command.draw.number_of_instances);
@@ -406,7 +408,7 @@ void RENDERER::add_command_destroy_pass(sg_pass pass)
 
 // ----------------------------------------------------------------------------------------------------
 
-void RENDERER::add_command_update_buffer(sg_buffer buffer, const void* data, int data_size)
+void RENDERER::add_command_update_buffer(sg_buffer buffer, const sg_range& data)
 {
 	// add command
 	RENDER_COMMAND& command = m_commands[m_pending_commands_index].emplace_back(RENDER_COMMAND::TYPE::UPDATE_BUFFER);
@@ -414,12 +416,11 @@ void RENDERER::add_command_update_buffer(sg_buffer buffer, const void* data, int
 	// copy args
 	command.update_buffer.buffer = buffer;
 	command.update_buffer.data = data;
-	command.update_buffer.data_size = data_size;
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void RENDERER::add_command_append_buffer(sg_buffer buffer, const void* data, int data_size)
+void RENDERER::add_command_append_buffer(sg_buffer buffer, const sg_range& data)
 {
 	// add command
 	RENDER_COMMAND& command = m_commands[m_pending_commands_index].emplace_back(RENDER_COMMAND::TYPE::APPEND_BUFFER);
@@ -427,19 +428,18 @@ void RENDERER::add_command_append_buffer(sg_buffer buffer, const void* data, int
 	// copy args
 	command.append_buffer.buffer = buffer;
 	command.append_buffer.data = data;
-	command.append_buffer.data_size = data_size;
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-void RENDERER::add_command_update_image(sg_image image, const sg_image_content& cont)
+void RENDERER::add_command_update_image(sg_image image, const sg_image_data& data)
 {
 	// add command
 	RENDER_COMMAND& command = m_commands[m_pending_commands_index].emplace_back(RENDER_COMMAND::TYPE::UPDATE_IMAGE);
 
 	// copy args
 	command.update_image.image = image;
-	command.update_image.cont = cont;
+	command.update_image.data = data;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -519,10 +519,13 @@ void RENDERER::add_command_apply_bindings(const sg_bindings& bindings)
 
 // ----------------------------------------------------------------------------------------------------
 
-void RENDERER::add_command_apply_uniforms(sg_shader_stage stage, int ub_index, const void* data, int data_size)
+void RENDERER::add_command_apply_uniforms(sg_shader_stage stage, int ub_index, const sg_range& data)
 {
-	// validate data size
-	assert ((size_t)data_size <= sizeof(RENDER_COMMAND::apply_uniforms.data))
+	// data size too big?
+	if ((size_t)data.size > sizeof(RENDER_COMMAND::apply_uniforms.buf))
+	{
+		return;
+	}
 
 	// add command
 	RENDER_COMMAND& command = m_commands[m_pending_commands_index].emplace_back(RENDER_COMMAND::TYPE::APPLY_UNIFORMS);
@@ -530,8 +533,9 @@ void RENDERER::add_command_apply_uniforms(sg_shader_stage stage, int ub_index, c
 	// copy args
 	command.apply_uniforms.stage = stage;
 	command.apply_uniforms.ub_index = ub_index;
-	memcpy(command.apply_uniforms.data, data, data_size);
-	command.apply_uniforms.data_size = data_size;
+	memcpy(command.apply_uniforms.buf, data.ptr, data.size);
+	command.apply_uniforms.data.ptr = command.apply_uniforms.buf;
+	command.apply_uniforms.data.size = data.size;
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -627,6 +631,32 @@ void RENDERER::flush_commands()
 
 	// release update semaphore
 	m_update_semaphore.release();
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+const std::string RENDERER::get_name() const
+{
+	// return name
+	switch (sg_query_backend())
+	{
+	case SG_BACKEND_GLCORE33:
+		return "OpenGL 3.3";
+	case SG_BACKEND_GLES2:
+		return "OpenGL ES 2.0";
+	case SG_BACKEND_GLES3:
+		return "OpenGL ES 3.0";
+	case SG_BACKEND_D3D11:
+		return "Direct3D 11";
+	case SG_BACKEND_METAL_IOS:
+	case SG_BACKEND_METAL_MACOS:
+	case SG_BACKEND_METAL_SIMULATOR:
+		return "Metal";
+	case SG_BACKEND_WGPU:
+		return "WebGPU";
+	default:
+		return "Unknown";
+	}
 }
 
 // ----------------------------------------------------------------------------------------------------

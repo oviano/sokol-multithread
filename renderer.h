@@ -4,7 +4,6 @@
 // ----------------------------------------------------------------------------------------------------
 
 #include <vector>
-#include <atomic>
 #include <mutex>
 
 #include "sokol_gfx.h"
@@ -124,21 +123,19 @@ struct RENDER_COMMAND
 		struct
 		{
 			sg_buffer buffer;
-			const void* data;
-			int data_size;
+			sg_range data;
 		} update_buffer;
 		
 		struct
 		{
 			sg_buffer buffer;
-			const void* data;
-			int data_size;
+			sg_range data;
 		} append_buffer;
 		
 		struct
 		{
 			sg_image image;
-			sg_image_content cont;
+			sg_image_data data;
 		} update_image;
 		
 		struct
@@ -190,8 +187,8 @@ struct RENDER_COMMAND
 		{
 			sg_shader_stage stage;
 			int ub_index;
-			unsigned char data[512];
-			int data_size;
+			sg_range data;
+			char buf[512];
 		} apply_uniforms;
 		
 		struct
@@ -253,9 +250,9 @@ public:
 	void add_command_destroy_pipeline(sg_pipeline pipeline);
 	void add_command_destroy_pass(sg_pass pass);
 	
-	void add_command_update_buffer(sg_buffer buffer, const void* data, int data_size);
-	void add_command_append_buffer(sg_buffer buffer, const void* data, int data_size);
-	void add_command_update_image(sg_image image, const sg_image_content& cont);
+	void add_command_update_buffer(sg_buffer buffer, const sg_range& data);
+	void add_command_append_buffer(sg_buffer buffer, const sg_range& data);
+	void add_command_update_image(sg_image image, const sg_image_data& data);
 	
 	void add_command_begin_default_pass(const sg_pass_action& pass_action);
 	void add_command_begin_pass(sg_pass pass, const sg_pass_action& pass_action);
@@ -263,7 +260,7 @@ public:
 	void add_command_apply_scissor_rect(int x, int y, int width, int height, bool origin_top_left);
 	void add_command_apply_pipeline(sg_pipeline pipeline);
 	void add_command_apply_bindings(const sg_bindings& bindings);
-	void add_command_apply_uniforms(sg_shader_stage stage, int ub_index, const void* data, int data_size);
+	void add_command_apply_uniforms(sg_shader_stage stage, int ub_index, const sg_range& data);
 	void add_command_draw(int base_element, int number_of_elements, int number_of_instances);
 	void add_command_end_pass();
 	void add_command_commit();
@@ -278,6 +275,10 @@ public:
 	void lock_execute_mutex() { m_execute_mutex.lock(); }
 	void unlock_execute_mutex() { m_execute_mutex.unlock(); }
 
+	const std::string get_name() const;
+
+	sg_pixel_format get_pixel_format() const { return sg_query_desc().context.color_format; }
+	
 private:
 	void process_cleanups(int32_t frame_index);
 
