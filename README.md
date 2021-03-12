@@ -16,8 +16,6 @@ Update thread
 - call renderer->commit_commands() when you're done for the frame
 - call renderer->flush_commands() on termination, before exiting the thread
 
-There is also a modified version of sokol_imgui.h as an example.
-
 Resources
 
 When creating or updating resources (buffers, images etc) it is up to the caller to ensure that any pointers passed into an add_command_xxx() call made in the update thread remain valid until the underlying sg_xxx() command has been issued from the render thread.
