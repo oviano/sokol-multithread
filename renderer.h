@@ -187,7 +187,7 @@ struct RENDER_COMMAND
 		{
 			sg_shader_stage stage;
 			int ub_index;
-			sg_range data;
+			size_t data_size;
 			char buf[512];
 		} apply_uniforms;
 		

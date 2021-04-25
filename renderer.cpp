@@ -137,7 +137,7 @@ void RENDERER::execute_commands(bool resource_only)
 				sg_apply_bindings(command.apply_bindings.bindings);
 				break;
 			case RENDER_COMMAND::TYPE::APPLY_UNIFORMS:
-				sg_apply_uniforms(command.apply_uniforms.stage, command.apply_uniforms.ub_index, command.apply_uniforms.data);
+				sg_apply_uniforms(command.apply_uniforms.stage, command.apply_uniforms.ub_index, { command.apply_uniforms.buf, command.apply_uniforms.data_size });
 				break;
 			case RENDER_COMMAND::TYPE::DRAW:
 				sg_draw(command.draw.base_element, command.draw.number_of_elements, command.draw.number_of_instances);
@@ -534,8 +534,7 @@ void RENDERER::add_command_apply_uniforms(sg_shader_stage stage, int ub_index, c
 	command.apply_uniforms.stage = stage;
 	command.apply_uniforms.ub_index = ub_index;
 	memcpy(command.apply_uniforms.buf, data.ptr, data.size);
-	command.apply_uniforms.data.ptr = command.apply_uniforms.buf;
-	command.apply_uniforms.data.size = data.size;
+	command.apply_uniforms.data_size = data.size;
 }
 
 // ----------------------------------------------------------------------------------------------------
